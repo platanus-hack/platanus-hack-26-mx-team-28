@@ -85,6 +85,18 @@ def list_children() -> list[dict]:
         return []
 
 
+def get_child(child_id: str) -> dict | None:
+    if not enabled() or not child_id:
+        return None
+    try:
+        res = _client_once().table("children").select("id,name,age,sex").eq(
+            "id", child_id
+        ).limit(1).execute()
+        return res.data[0] if res.data else None
+    except Exception:  # noqa: BLE001
+        return None
+
+
 def get_decisions(child_id: str) -> list[dict]:
     if not enabled() or not child_id:
         return []
