@@ -1,0 +1,9 @@
+rules_version = '2';
+service firebase.storage {
+  match /b/{bucket}/o {
+    match /stories/{storyId}/{allPaths=**} {
+      // Allow read and write access to files in stories/{storyId} to any authenticated user
+      allow read, write: if request.auth != null;
+    }
+  }
+}

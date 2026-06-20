@@ -1,4 +1,24 @@
 // Interfaz Dominikito — cuento interactivo escena a escena (ramificado por las decisiones).
+import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
+import { getAuth, signInWithPopup, GoogleAuthProvider, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
+import { getFirestore, doc, setDoc, getDoc, collection, getDocs, query, where, updateDoc, deleteDoc } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
+import { getStorage, ref, uploadBytes, getDownloadURL, deleteObject } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-storage.js";
+
+const firebaseConfig = {
+  projectId: "dominikito-c21fd",
+  appId: "1:920971971262:web:c16dfe833965d5f6856cef",
+  storageBucket: "dominikito-c21fd.firebasestorage.app",
+  apiKey: "AIzaSyDNSJXT7zQJIBF1LccK-PB7Nru6ZreEnlE",
+  authDomain: "dominikito-c21fd.firebaseapp.com",
+  messagingSenderId: "920971971262",
+  measurementId: "G-84N6ECME66"
+};
+
+const app = initializeApp(firebaseConfig);
+const auth = getAuth(app);
+const db = getFirestore(app);
+const storage = getStorage(app);
+const provider = new GoogleAuthProvider();
 
 const ILLUS = ["🐵", "🛸", "⭐", "🌙", "☁️", "🍌"];
 const OPT_COLORS = ["blue", "orange", "green", "purple", "red"];
@@ -20,6 +40,12 @@ let dashPin = "";            // PIN del dashboard (sesión)
 let bookPages = [];          // Lista de páginas en el libro actual
 let currentPageIndex = 0;    // Índice de la página actualmente mostrada en el libro
 let pageTransitioning = false; // Flag para evitar clicks múltiples durante la transición
+
+// Variables para Firebase
+let currentUser = null;
+let allStoryPages = [];      // Todas las páginas del cuento actual (para historial)
+let isOfflineMode = false;
+let currentFirestoreStoryId = null;
 
 function esc(s) { const d = document.createElement("div"); d.textContent = s == null ? "" : String(s); return d.innerHTML; }
 async function errMsg(res) { try { const j = await res.json(); return j.detail || ("HTTP " + res.status); } catch (_) { return "HTTP " + res.status; } }
@@ -61,6 +87,46 @@ function stopAudio() {
   document.querySelectorAll(".word-span").forEach(el => el.classList.remove("highlight"));
 }
 
+function setupAudioEvents(audio, btn, wordsTimestampsPromise) {
+  audio.onplaying = () => {
+    if (btn) btn.textContent = "⏸ Parar";
+    wordsTimestampsPromise.then(words => {
+      if (words && words.length > 0 && currentAudio === audio) {
+        startHighlightLoopForPage(words, currentPageIndex);
+      }
+    });
+  };
+  
+  audio.onended = () => {
+    if (btn) btn.textContent = "🔊 Léemelo";
+    stopAudio();
+    
+    // Auto-advance to next page after a brief pause
+    setTimeout(() => {
+      if (currentPageIndex < bookPages.length - 1) {
+        nextPage(true);
+      }
+    }, 1200);
+  };
+  
+  audio.onerror = () => {
+    if (btn) btn.textContent = "🔊 Léemelo";
+    stopAudio();
+  };
+}
+
+function dataURItoBlob(dataURI) {
+  const parts = dataURI.split(',');
+  const byteString = atob(parts[1]);
+  const mimeString = parts[0].split(':')[1].split(';')[0];
+  const ab = new ArrayBuffer(byteString.length);
+  const ia = new Uint8Array(ab);
+  for (let i = 0; i < byteString.length; i++) {
+    ia[i] = byteString.charCodeAt(i);
+  }
+  return new Blob([ab], { type: mimeString });
+}
+
 function playCurrentPageAudio() {
   const page = bookPages[currentPageIndex];
   const btn = document.getElementById("read-btn");
@@ -76,52 +142,91 @@ function playCurrentPageAudio() {
   }
   
   stopAudio();
-  
   const textToRead = page.text;
-  currentAudio = new Audio("/api/tts?text=" + encodeURIComponent(textToRead));
-  
-  let wordsTimestamps = [];
-  fetch("/api/tts/timestamps?text=" + encodeURIComponent(textToRead))
-    .then(res => res.ok ? res.json() : null)
-    .then(data => {
-      if (data && data.words) {
-        wordsTimestamps = data.words;
-        if (currentAudio && !currentAudio.paused) {
-          startHighlightLoopForPage(wordsTimestamps, currentPageIndex);
-        }
-      }
-    })
-    .catch(err => console.error("Error al obtener timestamps:", err));
-    
-  currentAudio.onplaying = () => {
-    if (btn) btn.textContent = "⏸ Parar";
-    if (wordsTimestamps && wordsTimestamps.length > 0) {
-      startHighlightLoopForPage(wordsTimestamps, currentPageIndex);
-    }
-  };
-  
-  currentAudio.onended = () => {
-    if (btn) btn.textContent = "🔊 Léemelo";
-    stopAudio();
-    
-    // Auto-advance to next page after a brief pause
-    setTimeout(() => {
-      if (currentPageIndex < bookPages.length - 1) {
-        nextPage(true);
-      }
-    }, 1200);
-  };
-  
-  currentAudio.onerror = () => {
-    if (btn) btn.textContent = "🔊 Léemelo";
-    stopAudio();
-  };
-  
-  currentAudio.play().catch(e => {
-    stopAudio();
-    if (btn) btn.textContent = "🔊 Léemelo";
-    console.log("Autoplay blocked or audio error:", e);
+
+  // Promise to get timestamps (either from cache or API)
+  let resolveTimestamps;
+  const wordsTimestampsPromise = new Promise((resolve) => {
+    resolveTimestamps = resolve;
   });
+
+  if (page.words) {
+    resolveTimestamps(page.words);
+  } else {
+    fetch("/api/tts/timestamps?text=" + encodeURIComponent(textToRead))
+      .then(res => res.ok ? res.json() : null)
+      .then(data => {
+        if (data && data.words) {
+          resolveTimestamps(data.words);
+          // Cache in Firestore
+          if (!isOfflineMode && currentFirestoreStoryId && page.pageIndex !== undefined) {
+            const pageRef = doc(db, "stories", currentFirestoreStoryId, "pages", String(page.pageIndex));
+            updateDoc(pageRef, { words: data.words }).catch(err => console.error("Error caching words:", err));
+          }
+        } else {
+          resolveTimestamps([]);
+        }
+      })
+      .catch(err => {
+        console.error("Error getting timestamps:", err);
+        resolveTimestamps([]);
+      });
+  }
+
+  // Play audio (either from cache URL, base64, or API)
+  if (page.audio) {
+    currentAudio = new Audio(page.audio);
+    setupAudioEvents(currentAudio, btn, wordsTimestampsPromise);
+    currentAudio.play().catch(e => {
+      stopAudio();
+      if (btn) btn.textContent = "🔊 Léemelo";
+      console.log("Autoplay blocked or audio error:", e);
+    });
+  } else {
+    fetch("/api/tts?text=" + encodeURIComponent(textToRead))
+      .then(res => {
+        if (!res.ok) throw new Error("TTS failed");
+        return res.blob();
+      })
+      .then(blob => {
+        // Play audio immediately from object URL (instant playback)
+        const objectURL = URL.createObjectURL(blob);
+
+        if (currentPageIndex === bookPages.indexOf(page)) {
+          stopAudio();
+          currentAudio = new Audio(objectURL);
+          setupAudioEvents(currentAudio, btn, wordsTimestampsPromise);
+          currentAudio.play().catch(e => {
+            stopAudio();
+            if (btn) btn.textContent = "🔊 Léemelo";
+            console.log("Autoplay blocked or audio error:", e);
+          });
+        }
+
+        // Cache in Firebase Storage and Firestore in background (non-blocking)
+        if (!isOfflineMode && currentFirestoreStoryId && page.pageIndex !== undefined) {
+          const uploadAndCache = async () => {
+            try {
+              const audioRef = ref(storage, `stories/${currentFirestoreStoryId}/pages/${page.pageIndex}/audio.mp3`);
+              await uploadBytes(audioRef, blob);
+              const downloadURL = await getDownloadURL(audioRef);
+              page.audio = downloadURL;
+              
+              const pageRef = doc(db, "stories", currentFirestoreStoryId, "pages", String(page.pageIndex));
+              await updateDoc(pageRef, { audio: downloadURL });
+            } catch (err) {
+              console.error("Error caching audio to Storage/Firestore:", err);
+            }
+          };
+          uploadAndCache();
+        }
+      })
+      .catch(err => {
+        console.error("Error loading audio:", err);
+        if (btn) btn.textContent = "🔊 Léemelo";
+        stopAudio();
+      });
+  }
 }
 
 function togglePlayPause() {
@@ -195,13 +300,21 @@ function renderBook() {
       `;
       (d.options || []).forEach((opt, j) => {
         const color = OPT_COLORS[j % OPT_COLORS.length];
-        const isSample = !childId;
-        const clickHandler = isSample ? `selectSampleOption(this)` : `choose(this)`;
+        const isSel = (page.chosenOptionId && opt.id === page.chosenOptionId) ? "sel" : "";
+        
+        let clickHandler = "";
+        let disabledAttr = "";
+        if (isOfflineMode) {
+          disabledAttr = "disabled";
+        } else {
+          const isSample = !childId;
+          clickHandler = isSample ? `selectSampleOption(this)` : `choose(this)`;
+        }
         
         dilemmaHtml += `
-          <button class="opt opt-${color}" data-dim="${esc(d.primary_dimension)}" 
+          <button class="opt opt-${color} ${isSel}" data-dim="${esc(d.primary_dimension)}" 
             data-id="${esc(opt.id)}" data-pole="${esc(opt.pole)}" data-txt="${esc(opt.text)}" 
-            onclick="${clickHandler}">
+            onclick="${clickHandler}" ${disabledAttr}>
             <span class="bul">${esc(opt.id)}</span>
             <span>${esc(opt.text)}</span>
             <span class="pole-tag">${esc(opt.pole)}</span>
@@ -268,8 +381,7 @@ function updateNavButtons() {
   } else if (currentPage.type === "dilemma") {
     if (readBtn) readBtn.style.display = "none";
     
-    const isSample = !childId;
-    if (isSample) {
+    if (isOfflineMode || !childId) {
       nextBtn.style.display = "inline-block";
       nextBtn.disabled = false;
     } else {
@@ -327,6 +439,23 @@ function nextPage(isAuto = false) {
   }
 }
 
+// Bind all module functions to window so they are globally accessible from inline HTML
+window.createStory = createStory;
+window.loadSample = loadSample;
+window.backToCreate = backToCreate;
+window.toggleDev = toggleDev;
+window.prevPage = prevPage;
+window.nextPage = nextPage;
+window.togglePlayPause = togglePlayPause;
+window.dashLogin = dashLogin;
+window.loadChildDashboard = loadChildDashboard;
+window.choose = choose;
+window.selectSampleOption = selectSampleOption;
+window.showDashboardLogin = showDashboardLogin;
+window.showHistoryScreen = showHistoryScreen;
+window.readSavedStory = readSavedStory;
+window.deleteSavedStory = deleteSavedStory;
+
 function prevPage() {
   if (currentPageIndex > 0) {
     goToPage(currentPageIndex - 1, true);
@@ -335,14 +464,39 @@ function prevPage() {
 
 function renderProgressHtml() {
   const ending = bookPages.length > 0 && bookPages[bookPages.length - 1].type === "ending";
-  if (!ending && childId) {
+  if (!ending && childId && !isOfflineMode) {
     return '<div class="progress">Decisión ' + (choicesMade + 1) + " de " + total + "</div>";
   }
   return "";
 }
 
+async function savePageToFirestore(storyIdVal, page) {
+  if (!currentUser || !storyIdVal) return;
+  try {
+    const pageRef = doc(db, "stories", storyIdVal, "pages", String(page.pageIndex));
+    
+    // If image is a base64 data-URI, upload it to Storage in the background and replace with download URL
+    if (page.image && page.image.startsWith("data:image/")) {
+      try {
+        const imageBlob = dataURItoBlob(page.image);
+        const imageRef = ref(storage, `stories/${storyIdVal}/pages/${page.pageIndex}/image.png`);
+        await uploadBytes(imageRef, imageBlob);
+        const downloadURL = await getDownloadURL(imageRef);
+        page.image = downloadURL;
+      } catch (err) {
+        console.error("Error uploading image to Storage:", err);
+        page.image = null; // Fallback to null to prevent Firestore document size errors
+      }
+    }
+    
+    await setDoc(pageRef, page);
+  } catch (e) {
+    console.error("Error saving page to Firestore:", e);
+  }
+}
+
 // Renderiza UN tramo (escena). data = {segment, dilemma, done?}
-function renderStep(data) {
+async function renderStep(data) {
   const seg = data.segment;
   const dilemma = data.dilemma;
   const ending = seg.is_ending || data.done;
@@ -354,29 +508,61 @@ function renderStep(data) {
   sceneShownAt = Date.now();
 
   bookPages = [];
-  (seg.pages || []).forEach(p => {
-    bookPages.push({
+  const newPages = [];
+  const startIndex = allStoryPages.length;
+
+  (seg.pages || []).forEach((p, idx) => {
+    const pageObj = {
       type: "story",
       text: p.text,
-      image: p.image,
+      image: p.image || null,
       isCheckpoint: p.is_checkpoint,
-      pageNumber: p.page
-    });
+      pageNumber: p.page,
+      pageIndex: startIndex + idx
+    };
+    bookPages.push(pageObj);
+    
+    if (!isOfflineMode) {
+      allStoryPages.push(pageObj);
+      newPages.push(pageObj);
+    }
   });
 
   if (!ending && dilemma) {
-    bookPages.push({
+    const dilemmaObj = {
       type: "dilemma",
-      dilemma: dilemma
-    });
+      dilemma: dilemma,
+      chosenOptionId: null,
+      pageIndex: allStoryPages.length
+    };
+    bookPages.push(dilemmaObj);
+    
+    if (!isOfflineMode) {
+      allStoryPages.push(dilemmaObj);
+      newPages.push(dilemmaObj);
+    }
   } else if (ending) {
-    bookPages.push({
-      type: "ending"
-    });
+    const endingObj = {
+      type: "ending",
+      pageIndex: allStoryPages.length
+    };
+    bookPages.push(endingObj);
+    
+    if (!isOfflineMode) {
+      allStoryPages.push(endingObj);
+      newPages.push(endingObj);
+    }
   }
 
   currentPageIndex = 0;
-  
+
+  // Save new pages to Firestore (non-blocking)
+  if (!isOfflineMode && currentFirestoreStoryId) {
+    newPages.forEach(page => {
+      savePageToFirestore(currentFirestoreStoryId, page);
+    });
+  }
+
   const progressHtml = renderProgressHtml();
   document.getElementById("reader").innerHTML = progressHtml + renderBook();
   
@@ -389,8 +575,15 @@ function renderStep(data) {
 
 async function createStory() {
   document.getElementById("create-err").textContent = "";
+  if (!currentUser) {
+    document.getElementById("create-err").textContent = "Por favor, inicia sesión con tu cuenta de Google arriba para empezar.";
+    return;
+  }
+  
   profile = profileFromForm();
   storySoFar = []; choicesMade = 0; illusIdx = 0;
+  isOfflineMode = false;
+  allStoryPages = [];
   document.getElementById("devlog-body").innerHTML = "";
   document.getElementById("subtitle").textContent = "Tu aventura";
   showLoading("Creando la aventura…");
@@ -403,7 +596,31 @@ async function createStory() {
     total = data.total || 2;
     childId = data.child_id || null;
     storyId = data.story_id || null;
-    renderStep(data);
+    
+    // Create new story metadata document in Firestore
+    const storyRef = doc(collection(db, "stories"));
+    currentFirestoreStoryId = storyRef.id;
+    const storyMetadata = {
+      userId: currentUser.uid,
+      childName: profile.name,
+      childAge: profile.age,
+      theme: profile.story_theme,
+      likes: profile.likes,
+      temperament: profile.temperament || "",
+      recentEvents: profile.recent_events || [],
+      createdAt: new Date(),
+      status: "in_progress",
+      choicesMade: 0,
+      totalChoices: total
+    };
+    try {
+      await setDoc(storyRef, storyMetadata);
+    } catch (err) {
+      console.error("Error creating story metadata:", err);
+      currentFirestoreStoryId = null; // Prevent writes that would fail rules
+    }
+    
+    await renderStep(data);
   } catch (e) {
     backToCreate();
     document.getElementById("create-err").textContent = "Ups, no se pudo crear el cuento: " + e.message;
@@ -419,6 +636,28 @@ async function choose(btn) {
   const line = document.createElement("div");
   line.textContent = "→ [" + rec.dimension + '] eligió: "' + rec.text + '"  ⇒  polo=' + rec.pole;
   document.getElementById("devlog-body").appendChild(line);
+
+  // Update choice in local list of pages and Firestore
+  if (!isOfflineMode && currentFirestoreStoryId) {
+    const lastPageIdx = allStoryPages.length - 1;
+    if (lastPageIdx >= 0 && allStoryPages[lastPageIdx].type === "dilemma") {
+      allStoryPages[lastPageIdx].chosenOptionId = btn.dataset.id;
+      allStoryPages[lastPageIdx].chosenOptionText = btn.dataset.txt;
+      
+      const pageRef = doc(db, "stories", currentFirestoreStoryId, "pages", String(lastPageIdx));
+      updateDoc(pageRef, {
+        chosenOptionId: btn.dataset.id,
+        chosenOptionText: btn.dataset.txt
+      }).catch(err => console.error("Error saving chosen option:", err));
+    }
+
+    const nextChoicesCount = choicesMade + 1;
+    const storyRef = doc(db, "stories", currentFirestoreStoryId);
+    updateDoc(storyRef, {
+      choicesMade: nextChoicesCount,
+      status: (nextChoicesCount >= total) ? "completed" : "in_progress"
+    }).catch(err => console.error("Error updating story choicesMade:", err));
+  }
 
   // guarda la decisión (lookup del polo pre-registrado) — no bloquea la historia
   if (currentDilemma) {
@@ -444,7 +683,7 @@ async function choose(btn) {
       body: JSON.stringify({ profile, story_so_far: storySoFar, choice: rec.text, choices_made: choicesMade }),
     });
     if (!res.ok) throw new Error(await errMsg(res));
-    renderStep(await res.json());
+    await renderStep(await res.json());
   } catch (e) {
     document.getElementById("reader").innerHTML = '<div class="err">No se pudo continuar: ' + esc(e.message) + "</div>";
   }
@@ -463,6 +702,8 @@ async function loadSample() {
   childId = null;
   storyId = null;
   choicesMade = 0;
+  isOfflineMode = true; // Samples act like offline stories (no api writes)
+  currentFirestoreStoryId = null;
   try {
     const res = await fetch("/api/storybook/sample");
     const data = await res.json();
@@ -1005,6 +1246,199 @@ function renderDashboard(data) {
 
   document.getElementById("dash-trends").innerHTML = html;
 }
+
+// ---------- Historial de Cuentos (Firebase) ----------
+async function showHistoryScreen() {
+  stopAudio();
+  showScreen("screen-history");
+  document.getElementById("subtitle").textContent = "Mis cuentos";
+  const listDiv = document.getElementById("history-list");
+  listDiv.innerHTML = '<div class="loading"><div class="rocket">🛸</div><p>Cargando tus cuentos…</p></div>';
+  
+  if (!currentUser) {
+    listDiv.innerHTML = '<div class="err">Debes iniciar sesión con Google para ver tus cuentos.</div>';
+    return;
+  }
+
+  try {
+    const q = query(
+      collection(db, "stories"),
+      where("userId", "==", currentUser.uid)
+    );
+    const querySnapshot = await getDocs(q);
+    if (querySnapshot.empty) {
+      listDiv.innerHTML = '<div style="grid-column: 1/-1; text-align: center; padding: 20px;">Aún no tienes cuentos creados. ¡Crea el primero! ✨</div>';
+      return;
+    }
+
+    const stories = [];
+    querySnapshot.forEach((docSnap) => {
+      stories.push({ id: docSnap.id, ...docSnap.data() });
+    });
+
+    // Sort in-memory to avoid requiring a composite index in Firestore
+    stories.sort((a, b) => {
+      const timeA = a.createdAt ? (a.createdAt.seconds || 0) : 0;
+      const timeB = b.createdAt ? (b.createdAt.seconds || 0) : 0;
+      return timeB - timeA;
+    });
+
+    let html = "";
+    stories.forEach((story) => {
+      const date = story.createdAt ? new Date(story.createdAt.seconds * 1000).toLocaleDateString() : "";
+      html += `
+        <div class="story-item-card">
+          <div>
+            <h3 class="story-item-title">${esc(story.theme || "Cuento sin tema")}</h3>
+            <div class="story-item-meta">
+              <div><b>Para:</b> ${esc(story.childName)} (${story.childAge} años)</div>
+              <div><b>Fecha:</b> ${date}</div>
+              <div><b>Estado:</b> ${story.status === "completed" ? "✅ Completado" : "⏳ En progreso"}</div>
+            </div>
+          </div>
+          <div class="story-item-actions">
+            <button class="btn primary" onclick="readSavedStory('${story.id}')">Leer 📖</button>
+            <button class="btn" style="background:var(--pink);" onclick="deleteSavedStory('${story.id}')">Borrar 🗑️</button>
+          </div>
+        </div>
+      `;
+    });
+    listDiv.innerHTML = html;
+  } catch (e) {
+    console.error("Error loading history:", e);
+    listDiv.innerHTML = '<div class="err">Error al cargar la lista: ' + esc(e.message) + '</div>';
+  }
+}
+
+async function readSavedStory(storyIdVal) {
+  showLoading("Cargando tu cuento guardado…");
+  isOfflineMode = true;
+  currentFirestoreStoryId = storyIdVal;
+  allStoryPages = [];
+  
+  try {
+    const pagesSnapshot = await getDocs(collection(db, "stories", storyIdVal, "pages"));
+    const pages = [];
+    pagesSnapshot.forEach((docSnap) => {
+      pages.push(docSnap.data());
+    });
+    
+    pages.sort((a, b) => a.pageIndex - b.pageIndex);
+    
+    if (pages.length === 0) {
+      throw new Error("No se encontraron páginas para este cuento.");
+    }
+    
+    bookPages = pages.map(p => {
+      if (p.type === "story") {
+        return {
+          type: "story",
+          text: p.text,
+          image: p.image,
+          pageNumber: p.pageIndex,
+          words: p.words,
+          audio: p.audio,
+          pageIndex: p.pageIndex
+        };
+      } else if (p.type === "dilemma") {
+        return {
+          type: "dilemma",
+          dilemma: p.dilemma || {},
+          chosenOptionId: p.chosenOptionId,
+          pageIndex: p.pageIndex
+        };
+      } else if (p.type === "ending") {
+        return {
+          type: "ending",
+          pageIndex: p.pageIndex
+        };
+      }
+    });
+    
+    currentPageIndex = 0;
+    
+    const storySnap = await getDoc(doc(db, "stories", storyIdVal));
+    if (storySnap.exists()) {
+      document.getElementById("subtitle").textContent = storySnap.data().theme + " (guardado)";
+    }
+    
+    const progressHtml = renderProgressHtml();
+    document.getElementById("reader").innerHTML = progressHtml + renderBook();
+    showScreen("screen-reader");
+    window.scrollTo(0, 0);
+    
+    playCurrentPageAudio();
+  } catch (e) {
+    console.error("Error reading saved story:", e);
+    alert("Error al cargar el cuento: " + e.message);
+    showHistoryScreen();
+  }
+}
+
+async function deleteSavedStory(storyIdVal) {
+  if (!confirm("¿Seguro que deseas borrar este cuento de tu historial?")) return;
+  try {
+    const pagesSnapshot = await getDocs(collection(db, "stories", storyIdVal, "pages"));
+    const deletePromises = [];
+    pagesSnapshot.forEach((pDoc) => {
+      const pageData = pDoc.data();
+      deletePromises.push(deleteDoc(doc(db, "stories", storyIdVal, "pages", pDoc.id)));
+      
+      // Delete from storage in background
+      if (pageData.image && pageData.image.includes("firebasestorage")) {
+        const imageRef = ref(storage, `stories/${storyIdVal}/pages/${pageData.pageIndex}/image.png`);
+        deleteObject(imageRef).catch(err => console.error("Error deleting image from storage:", err));
+      }
+      if (pageData.audio && pageData.audio.includes("firebasestorage")) {
+        const audioRef = ref(storage, `stories/${storyIdVal}/pages/${pageData.pageIndex}/audio.mp3`);
+        deleteObject(audioRef).catch(err => console.error("Error deleting audio from storage:", err));
+      }
+    });
+    await Promise.all(deletePromises);
+    
+    await deleteDoc(doc(db, "stories", storyIdVal));
+    alert("Cuento borrado con éxito.");
+    showHistoryScreen();
+  } catch (e) {
+    console.error("Error deleting story:", e);
+    alert("Error al borrar el cuento: " + e.message);
+  }
+}
+
+// ---------- Firebase Authentication Listener ----------
+onAuthStateChanged(auth, (user) => {
+  if (user) {
+    currentUser = user;
+    document.getElementById("user-header").style.display = "flex";
+    document.getElementById("user-header-anonymous").style.display = "none";
+    document.getElementById("user-avatar-img").src = user.photoURL || "";
+    document.getElementById("user-name-span").textContent = user.displayName || user.email;
+    document.getElementById("btn-show-history").style.display = "inline-block";
+  } else {
+    currentUser = null;
+    document.getElementById("user-header").style.display = "none";
+    document.getElementById("user-header-anonymous").style.display = "flex";
+    document.getElementById("btn-show-history").style.display = "none";
+  }
+});
+
+document.getElementById("login-btn-app")?.addEventListener("click", async () => {
+  try {
+    await signInWithPopup(auth, provider);
+  } catch (error) {
+    console.error("Login error:", error);
+    alert("Error al iniciar sesión: " + error.message);
+  }
+});
+
+document.getElementById("logout-btn")?.addEventListener("click", async () => {
+  try {
+    await signOut(auth);
+    backToCreate();
+  } catch (error) {
+    console.error("Logout error:", error);
+  }
+});
 
 // Función global para expandir/colapsar
 window.toggleScience = function(btn) {
