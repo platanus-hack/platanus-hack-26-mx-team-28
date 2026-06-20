@@ -1,0 +1,28 @@
+{
+  "_doc": "Dilemas de ejemplo para story_dino.json (checkpoints págs 2 y 5). Mapeo pre-registrado válido. Sirve para renderizar el demo sin llamar a la API.",
+  "dilemmas": [
+    {
+      "page": 2,
+      "primary_dimension": "confianza_apego",
+      "subaxis": "apego",
+      "narrative_context": "Mateo ve a una niña jugando sola en el parque, que le sonríe de lejos.",
+      "prompt": "¿Qué hace Mateo?",
+      "options": [
+        {"id": "A", "text": "Se acerca con su triceratops y le pregunta si quiere construir una base juntos", "pole": "busca_vinculo"},
+        {"id": "B", "text": "Sigue concentrado en su propia base, mirando solo a su triceratops", "pole": "evita_desconfia"}
+      ]
+    },
+    {
+      "page": 5,
+      "primary_dimension": "empatia",
+      "subaxis": "dano_a_otro",
+      "narrative_context": "El viento se lleva el dibujo favorito de Sofía hacia un charco y ella se pone triste.",
+      "prompt": "¿Qué hace Mateo para ayudar a Sofía?",
+      "options": [
+        {"id": "A", "text": "Corre muy rápido para atrapar el dibujo antes de que caiga al charco", "pole": "prosocial_asertivo"},
+        {"id": "B", "text": "Se queda parado mirando el dibujo que se aleja, un poco triste por Sofía", "pole": "pasivo_evitativo"},
+        {"id": "C", "text": "Le dice a Sofía que no importa, que ese dibujo ya era viejo", "pole": "reactivo_agresivo"}
+      ]
+    }
+  ]
+}

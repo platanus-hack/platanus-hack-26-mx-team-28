@@ -1,0 +1,75 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>dominikito</title>
+  <link rel="icon" href="/assets/favicon.png">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@600;800&family=Nunito:wght@600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="/styles.css">
+</head>
+<body>
+  <div class="devbar"><button onclick="toggleDev()">👁️ modo papás</button></div>
+
+  <div class="wrap">
+    <header>
+      <!-- logo.png (si existe); si no, cae al wordmark de texto -->
+      <img class="logo-img" src="/assets/logo.png" alt="dominikito"
+           onerror="var t=document.getElementById('wordmark-text'); if(t){t.style.display='block';} this.remove();">
+      <div class="wordmark" id="wordmark-text" style="display:none">
+        <span class="b">d</span><span class="b">o</span><span class="g">m</span><span class="g">i</span><span class="g">n</span><span class="g">i</span><span class="g">k</span><span class="y">i</span><span class="o">t</span><span class="y">o</span><span class="star">⭐</span>
+      </div>
+      <div class="sub" id="subtitle">Cuentos que escuchan a tu peque</div>
+    </header>
+
+    <!-- Pantalla 1: crear cuento (padres) -->
+    <section id="screen-create" class="screen active">
+      <img class="mascot" src="/assets/mascot.png" alt="" onerror="this.remove()">
+      <div class="card">
+        <h2>✨ Crear un cuento</h2>
+        <div class="row">
+          <div>
+            <label>Nombre del niño/a</label>
+            <input id="f-name" value="Dominik" />
+          </div>
+          <div>
+            <label>Edad</label>
+            <input id="f-age" type="number" min="2" max="12" step="0.5" value="6" />
+          </div>
+        </div>
+        <label>Gustos e intereses (separados por coma)</label>
+        <input id="f-likes" value="dinosaurios, el espacio, los cohetes" />
+        <label>Tema del cuento</label>
+        <input id="f-theme" value="hacer un amigo nuevo" />
+        <label>Temperamento (opcional)</label>
+        <input id="f-temp" placeholder="ej. tímido, sensible, curioso" />
+        <label>Recuerdos / cosas que pasaron (opcional)</label>
+        <textarea id="f-events" placeholder="ej. hoy se peleó en la escuela por un juguete"></textarea>
+        <p class="hint">Los recuerdos ayudan a personalizar y a evitar temas delicados.</p>
+        <div class="actions">
+          <button class="btn primary" onclick="createStory()">Crear cuento ✨</button>
+          <button class="btn ghost" onclick="loadSample()">Ver ejemplo</button>
+        </div>
+        <div id="create-err" class="err"></div>
+      </div>
+      <div class="note">Demo · interfaz Dominikito conectada a los Agentes 1 y 2</div>
+    </section>
+
+    <!-- Pantalla 2: lector del niño -->
+    <section id="screen-reader" class="screen">
+      <div id="reader"></div>
+      <div class="actions">
+        <button class="btn ghost" onclick="backToCreate()">← Crear otro cuento</button>
+      </div>
+    </section>
+  </div>
+
+  <div class="devlog" id="devlog">
+    <b>Modo papás · esto NO lo ve el niño</b>
+    <div id="devlog-body"></div>
+  </div>
+
+  <script src="/app.js"></script>
+</body>
+</html>

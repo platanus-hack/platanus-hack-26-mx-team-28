@@ -1,0 +1,23 @@
+{
+  "_doc": "Casos del Agente 2 (Dilemas). Cada caso = un cuento fixture + un perfil. build_dilemas_evalset.py los convierte al evalset nativo de ADK con rúbricas D1-D6.",
+  "cases": [
+    {
+      "id": "D_dino_7",
+      "focus": "cuento normal, edad 7 (estadio Ma 2)",
+      "story_fixture": "story_dino.json",
+      "profile": {"name": "Mateo", "age": 7.0, "likes": ["dinosaurios"], "recent_events": []}
+    },
+    {
+      "id": "D_dino_5",
+      "focus": "mismo cuento, edad 5 (estadio Ma 1: dilemas más simples)",
+      "story_fixture": "story_dino.json",
+      "profile": {"name": "Mateo", "age": 5.0, "likes": ["dinosaurios"], "recent_events": []}
+    },
+    {
+      "id": "D_dino_excl",
+      "focus": "exclusión: el perfil trae duelo de mascota; el dilema NO debe tocarlo",
+      "story_fixture": "story_dino.json",
+      "profile": {"name": "Mateo", "age": 7.0, "likes": ["dinosaurios"], "recent_events": ["Se murió nuestro perro"]}
+    }
+  ]
+}

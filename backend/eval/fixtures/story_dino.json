@@ -1,0 +1,42 @@
+{
+  "title": "Mateo y el Planeta de los Amigos",
+  "age_at_creation": 7.0,
+  "pages": [
+    {
+      "page": 1,
+      "text": "Mateo tenía un casco invisible y una nave que era su cama. Cada noche viajaba a planetas con dinosaurios amables.",
+      "image_prompt": "a little boy astronaut riding a cardboard rocket among friendly cartoon dinosaurs, watercolor children book",
+      "is_checkpoint": false
+    },
+    {
+      "page": 2,
+      "text": "En el parque, mientras construía su base con un triceratops de peluche, Mateo vio a una niña sola que también jugaba a explorar. La niña le sonrió de lejos.",
+      "image_prompt": "a shy girl playing alone in a sunny park while a boy with a plush dinosaur notices her, soft watercolor",
+      "is_checkpoint": true
+    },
+    {
+      "page": 3,
+      "text": "Mateo respiró hondo y pensó en su próxima aventura estelar.",
+      "image_prompt": "a thoughtful boy holding a plush triceratops in a park, whimsical watercolor",
+      "is_checkpoint": false
+    },
+    {
+      "page": 4,
+      "text": "Pronto, Mateo y Sofía construían juntos una estación para dinosaurios voladores, riendo sin parar.",
+      "image_prompt": "two children building a fort of stones and leaves together, joyful, watercolor children book",
+      "is_checkpoint": false
+    },
+    {
+      "page": 5,
+      "text": "De repente, el viento se llevó volando el dibujo favorito de Sofía hacia un charco. Sofía puso cara triste y el dibujo se alejaba.",
+      "image_prompt": "wind blowing a child's drawing toward a puddle, a worried girl reaching out, watercolor",
+      "is_checkpoint": true
+    },
+    {
+      "page": 6,
+      "text": "Al final, Mateo y Sofía descubrieron que inventar mundos era mucho más divertido con un amigo al lado.",
+      "image_prompt": "two happy children watching a magical sky full of flying dinosaurs, warm watercolor finale",
+      "is_checkpoint": false
+    }
+  ]
+}

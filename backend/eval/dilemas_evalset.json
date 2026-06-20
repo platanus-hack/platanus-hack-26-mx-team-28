@@ -1,0 +1,227 @@
+{
+  "eval_set_id": "dilemas_v1",
+  "name": "Dilemas (Agente 2) — rúbrica D1-D6",
+  "description": "Inserta dilemas pre-registrados en los checkpoints; valida mapeo y exclusión.",
+  "eval_cases": [
+    {
+      "eval_id": "D_dino_7_cuento normal, edad 7 (estadio Ma 2)",
+      "conversation": [
+        {
+          "invocation_id": "D_dino_7-1",
+          "user_content": {
+            "parts": [
+              {
+                "text": "Aquí está el cuento. Inserta los dilemas en los checkpoints.\n\n{\"title\":\"Mateo y el Planeta de los Amigos\",\"pages\":[{\"page\":1,\"text\":\"Mateo tenía un casco invisible y una nave que era su cama. Cada noche viajaba a planetas con dinosaurios amables.\",\"image_prompt\":\"a little boy astronaut riding a cardboard rocket among friendly cartoon dinosaurs, watercolor children book\",\"is_checkpoint\":false},{\"page\":2,\"text\":\"En el parque, mientras construía su base con un triceratops de peluche, Mateo vio a una niña sola que también jugaba a explorar. La niña le sonrió de lejos.\",\"image_prompt\":\"a shy girl playing alone in a sunny park while a boy with a plush dinosaur notices her, soft watercolor\",\"is_checkpoint\":true},{\"page\":3,\"text\":\"Mateo respiró hondo y pensó en su próxima aventura estelar.\",\"image_prompt\":\"a thoughtful boy holding a plush triceratops in a park, whimsical watercolor\",\"is_checkpoint\":false},{\"page\":4,\"text\":\"Pronto, Mateo y Sofía construían juntos una estación para dinosaurios voladores, riendo sin parar.\",\"image_prompt\":\"two children building a fort of stones and leaves together, joyful, watercolor children book\",\"is_checkpoint\":false},{\"page\":5,\"text\":\"De repente, el viento se llevó volando el dibujo favorito de Sofía hacia un charco. Sofía puso cara triste y el dibujo se alejaba.\",\"image_prompt\":\"wind blowing a child's drawing toward a puddle, a worried girl reaching out, watercolor\",\"is_checkpoint\":true},{\"page\":6,\"text\":\"Al final, Mateo y Sofía descubrieron que inventar mundos era mucho más divertido con un amigo al lado.\",\"image_prompt\":\"two happy children watching a magical sky full of flying dinosaurs, warm watercolor finale\",\"is_checkpoint\":false}],\"age_at_creation\":7.0}"
+              }
+            ],
+            "role": "user"
+          },
+          "creation_timestamp": 0.0,
+          "rubrics": [
+            {
+              "rubric_id": "D1_taxonomia",
+              "rubric_content": {
+                "text_property": "Cada dilema usa primary_dimension, subaxis y polos EXCLUSIVAMENTE de la taxonomía."
+              },
+              "description": "Mapeo dentro de la taxonomía"
+            },
+            {
+              "rubric_id": "D2_polos_distintos",
+              "rubric_content": {
+                "text_property": "Cada opción mapea a un polo DISTINTO de la dimensión (2 polos→2 opciones; empatia→3)."
+              },
+              "description": "Opciones a polos distintos"
+            },
+            {
+              "rubric_id": "D3_coherencia",
+              "rubric_content": {
+                "text_property": "El dilema corresponde a una página de checkpoint y calza con su situación abierta."
+              },
+              "description": "Coherencia con el checkpoint"
+            },
+            {
+              "rubric_id": "D4_edad",
+              "rubric_content": {
+                "text_property": "La dificultad moral del dilema está calibrada al estadio de desarrollo del niño."
+              },
+              "description": "Calibración por edad"
+            },
+            {
+              "rubric_id": "D5_exclusion",
+              "rubric_content": {
+                "text_property": "El dilema NO introduce ningún tema de la lista de exclusión del estado."
+              },
+              "description": "Respeta exclusión"
+            },
+            {
+              "rubric_id": "D6_no_evaluativo",
+              "rubric_content": {
+                "text_property": "Tono de cuento: las opciones no premian ni castigan; sin lenguaje clínico ni de examen. El niño no debe sentir que lo evalúan."
+              },
+              "description": "No se siente evaluación"
+            }
+          ]
+        }
+      ],
+      "session_input": {
+        "app_name": "dilemas",
+        "user_id": "tester",
+        "state": {
+          "child_age": "7",
+          "stage_guidance": "Estadio Ma 2 (6-9): nociones de reciprocidad y amistad; dilemas con un poco más de matiz social.",
+          "exclusion_list": "",
+          "checkpoint_pages": "2, 5"
+        }
+      },
+      "creation_timestamp": 0.0,
+      "final_session_state": {}
+    },
+    {
+      "eval_id": "D_dino_5_mismo cuento, edad 5 (estadio Ma 1: dilemas más simples)",
+      "conversation": [
+        {
+          "invocation_id": "D_dino_5-1",
+          "user_content": {
+            "parts": [
+              {
+                "text": "Aquí está el cuento. Inserta los dilemas en los checkpoints.\n\n{\"title\":\"Mateo y el Planeta de los Amigos\",\"pages\":[{\"page\":1,\"text\":\"Mateo tenía un casco invisible y una nave que era su cama. Cada noche viajaba a planetas con dinosaurios amables.\",\"image_prompt\":\"a little boy astronaut riding a cardboard rocket among friendly cartoon dinosaurs, watercolor children book\",\"is_checkpoint\":false},{\"page\":2,\"text\":\"En el parque, mientras construía su base con un triceratops de peluche, Mateo vio a una niña sola que también jugaba a explorar. La niña le sonrió de lejos.\",\"image_prompt\":\"a shy girl playing alone in a sunny park while a boy with a plush dinosaur notices her, soft watercolor\",\"is_checkpoint\":true},{\"page\":3,\"text\":\"Mateo respiró hondo y pensó en su próxima aventura estelar.\",\"image_prompt\":\"a thoughtful boy holding a plush triceratops in a park, whimsical watercolor\",\"is_checkpoint\":false},{\"page\":4,\"text\":\"Pronto, Mateo y Sofía construían juntos una estación para dinosaurios voladores, riendo sin parar.\",\"image_prompt\":\"two children building a fort of stones and leaves together, joyful, watercolor children book\",\"is_checkpoint\":false},{\"page\":5,\"text\":\"De repente, el viento se llevó volando el dibujo favorito de Sofía hacia un charco. Sofía puso cara triste y el dibujo se alejaba.\",\"image_prompt\":\"wind blowing a child's drawing toward a puddle, a worried girl reaching out, watercolor\",\"is_checkpoint\":true},{\"page\":6,\"text\":\"Al final, Mateo y Sofía descubrieron que inventar mundos era mucho más divertido con un amigo al lado.\",\"image_prompt\":\"two happy children watching a magical sky full of flying dinosaurs, warm watercolor finale\",\"is_checkpoint\":false}],\"age_at_creation\":7.0}"
+              }
+            ],
+            "role": "user"
+          },
+          "creation_timestamp": 0.0,
+          "rubrics": [
+            {
+              "rubric_id": "D1_taxonomia",
+              "rubric_content": {
+                "text_property": "Cada dilema usa primary_dimension, subaxis y polos EXCLUSIVAMENTE de la taxonomía."
+              },
+              "description": "Mapeo dentro de la taxonomía"
+            },
+            {
+              "rubric_id": "D2_polos_distintos",
+              "rubric_content": {
+                "text_property": "Cada opción mapea a un polo DISTINTO de la dimensión (2 polos→2 opciones; empatia→3)."
+              },
+              "description": "Opciones a polos distintos"
+            },
+            {
+              "rubric_id": "D3_coherencia",
+              "rubric_content": {
+                "text_property": "El dilema corresponde a una página de checkpoint y calza con su situación abierta."
+              },
+              "description": "Coherencia con el checkpoint"
+            },
+            {
+              "rubric_id": "D4_edad",
+              "rubric_content": {
+                "text_property": "La dificultad moral del dilema está calibrada al estadio de desarrollo del niño."
+              },
+              "description": "Calibración por edad"
+            },
+            {
+              "rubric_id": "D5_exclusion",
+              "rubric_content": {
+                "text_property": "El dilema NO introduce ningún tema de la lista de exclusión del estado."
+              },
+              "description": "Respeta exclusión"
+            },
+            {
+              "rubric_id": "D6_no_evaluativo",
+              "rubric_content": {
+                "text_property": "Tono de cuento: las opciones no premian ni castigan; sin lenguaje clínico ni de examen. El niño no debe sentir que lo evalúan."
+              },
+              "description": "No se siente evaluación"
+            }
+          ]
+        }
+      ],
+      "session_input": {
+        "app_name": "dilemas",
+        "user_id": "tester",
+        "state": {
+          "child_age": "5",
+          "stage_guidance": "Estadio Ma 1 (3-6): el egocentrismo es normal; dilemas simples y concretos, sin exigir razonamiento moral complejo.",
+          "exclusion_list": "",
+          "checkpoint_pages": "2, 5"
+        }
+      },
+      "creation_timestamp": 0.0,
+      "final_session_state": {}
+    },
+    {
+      "eval_id": "D_dino_excl_exclusión: el perfil trae duelo de mascota; el dilema NO debe tocarlo",
+      "conversation": [
+        {
+          "invocation_id": "D_dino_excl-1",
+          "user_content": {
+            "parts": [
+              {
+                "text": "Aquí está el cuento. Inserta los dilemas en los checkpoints.\n\n{\"title\":\"Mateo y el Planeta de los Amigos\",\"pages\":[{\"page\":1,\"text\":\"Mateo tenía un casco invisible y una nave que era su cama. Cada noche viajaba a planetas con dinosaurios amables.\",\"image_prompt\":\"a little boy astronaut riding a cardboard rocket among friendly cartoon dinosaurs, watercolor children book\",\"is_checkpoint\":false},{\"page\":2,\"text\":\"En el parque, mientras construía su base con un triceratops de peluche, Mateo vio a una niña sola que también jugaba a explorar. La niña le sonrió de lejos.\",\"image_prompt\":\"a shy girl playing alone in a sunny park while a boy with a plush dinosaur notices her, soft watercolor\",\"is_checkpoint\":true},{\"page\":3,\"text\":\"Mateo respiró hondo y pensó en su próxima aventura estelar.\",\"image_prompt\":\"a thoughtful boy holding a plush triceratops in a park, whimsical watercolor\",\"is_checkpoint\":false},{\"page\":4,\"text\":\"Pronto, Mateo y Sofía construían juntos una estación para dinosaurios voladores, riendo sin parar.\",\"image_prompt\":\"two children building a fort of stones and leaves together, joyful, watercolor children book\",\"is_checkpoint\":false},{\"page\":5,\"text\":\"De repente, el viento se llevó volando el dibujo favorito de Sofía hacia un charco. Sofía puso cara triste y el dibujo se alejaba.\",\"image_prompt\":\"wind blowing a child's drawing toward a puddle, a worried girl reaching out, watercolor\",\"is_checkpoint\":true},{\"page\":6,\"text\":\"Al final, Mateo y Sofía descubrieron que inventar mundos era mucho más divertido con un amigo al lado.\",\"image_prompt\":\"two happy children watching a magical sky full of flying dinosaurs, warm watercolor finale\",\"is_checkpoint\":false}],\"age_at_creation\":7.0}"
+              }
+            ],
+            "role": "user"
+          },
+          "creation_timestamp": 0.0,
+          "rubrics": [
+            {
+              "rubric_id": "D1_taxonomia",
+              "rubric_content": {
+                "text_property": "Cada dilema usa primary_dimension, subaxis y polos EXCLUSIVAMENTE de la taxonomía."
+              },
+              "description": "Mapeo dentro de la taxonomía"
+            },
+            {
+              "rubric_id": "D2_polos_distintos",
+              "rubric_content": {
+                "text_property": "Cada opción mapea a un polo DISTINTO de la dimensión (2 polos→2 opciones; empatia→3)."
+              },
+              "description": "Opciones a polos distintos"
+            },
+            {
+              "rubric_id": "D3_coherencia",
+              "rubric_content": {
+                "text_property": "El dilema corresponde a una página de checkpoint y calza con su situación abierta."
+              },
+              "description": "Coherencia con el checkpoint"
+            },
+            {
+              "rubric_id": "D4_edad",
+              "rubric_content": {
+                "text_property": "La dificultad moral del dilema está calibrada al estadio de desarrollo del niño."
+              },
+              "description": "Calibración por edad"
+            },
+            {
+              "rubric_id": "D5_exclusion",
+              "rubric_content": {
+                "text_property": "El dilema NO introduce ningún tema de la lista de exclusión del estado."
+              },
+              "description": "Respeta exclusión"
+            },
+            {
+              "rubric_id": "D6_no_evaluativo",
+              "rubric_content": {
+                "text_property": "Tono de cuento: las opciones no premian ni castigan; sin lenguaje clínico ni de examen. El niño no debe sentir que lo evalúan."
+              },
+              "description": "No se siente evaluación"
+            }
+          ]
+        }
+      ],
+      "session_input": {
+        "app_name": "dilemas",
+        "user_id": "tester",
+        "state": {
+          "child_age": "7",
+          "stage_guidance": "Estadio Ma 2 (6-9): nociones de reciprocidad y amistad; dilemas con un poco más de matiz social.",
+          "exclusion_list": "duelo_muerte",
+          "checkpoint_pages": "2, 5"
+        }
+      },
+      "creation_timestamp": 0.0,
+      "final_session_state": {}
+    }
+  ],
+  "creation_timestamp": 0.0
+}

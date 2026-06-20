@@ -1,0 +1,36 @@
+# --- Secretos (NUNCA commitear) ---
+.env
+.env.*
+!.env.example
+*.key
+
+# --- Python ---
+.venv/
+venv/
+__pycache__/
+*.py[cod]
+*.egg-info/
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+
+# --- ADK / runtime ---
+.adk/
+**/.adk/
+*.session.db
+session.db
+
+# --- Node (por si se agrega Next.js después) ---
+node_modules/
+.next/
+
+# --- SO / editor ---
+.DS_Store
+Thumbs.db
+*.swp
+.idea/
+.vscode/
+
+# --- Artefactos generados ---
+demo/*.html
+*.log

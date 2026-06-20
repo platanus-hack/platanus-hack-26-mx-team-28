@@ -1,0 +1,7 @@
+# Backend — Perfil Emocional Infantil (Paso 1: base + Agente 1)
+google-adk          # Agent Development Kit (agentes + adk web / adk eval / adk api_server)
+google-genai        # Gemini (texto; imágenes en fases siguientes)
+pydantic            # schemas (Story, ChildProfile)
+python-dotenv       # cargar backend/.env
+pytest              # tests deterministas y en vivo
+elevenlabs          # texto a voz (narración del cuento)
