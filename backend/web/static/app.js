@@ -307,8 +307,8 @@ function renderBook() {
         if (isOfflineMode) {
           disabledAttr = "disabled";
         } else {
-          const isSample = !childId;
-          clickHandler = isSample ? `selectSampleOption(this)` : `choose(this)`;
+          // No-offline = cuento interactivo real → la opción avanza la historia y guarda la decisión.
+          clickHandler = `choose(this)`;
         }
         
         dilemmaHtml += `
@@ -381,10 +381,11 @@ function updateNavButtons() {
   } else if (currentPage.type === "dilemma") {
     if (readBtn) readBtn.style.display = "none";
     
-    if (isOfflineMode || !childId) {
+    if (isOfflineMode) {
       nextBtn.style.display = "inline-block";
       nextBtn.disabled = false;
     } else {
+      // En cuento interactivo el dilema se avanza eligiendo una opción, no con "Sig.".
       nextBtn.style.display = "none";
     }
   } else if (currentPage.type === "ending") {
@@ -464,7 +465,7 @@ function prevPage() {
 
 function renderProgressHtml() {
   const ending = bookPages.length > 0 && bookPages[bookPages.length - 1].type === "ending";
-  if (!ending && childId && !isOfflineMode) {
+  if (!ending && !isOfflineMode) {
     return '<div class="progress">Decisión ' + (choicesMade + 1) + " de " + total + "</div>";
   }
   return "";
