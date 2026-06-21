@@ -42,8 +42,8 @@ En esta fase, Terraform habilitará automáticamente las APIs necesarias de GCP,
 
 2. Verifica y ajusta el archivo `terraform.tfvars`. El contenido por defecto es:
    ```hcl
-   project_id          = "TU_GCP_PROJECT_ID"
-   firebase_project_id = "TU_FIREBASE_PROJECT_ID"
+   project_id          = "$GCP_PROJECT_ID"
+   firebase_project_id = "$FIREBASE_PROJECT_ID"
    region              = "us-central1"
    app_name            = "dominikito"
    ```
@@ -84,16 +84,14 @@ Usa los outputs generados por Terraform para rellenar tu archivo `.env` en el ba
 
    ```env
    # Credenciales GCP obtenidas del despliegue de Terraform
-   GCP_PROJECT_ID="TU_GCP_PROJECT_ID"
+   GCP_PROJECT_ID="$GCP_PROJECT_ID"
    GCP_REGION="us-central1"
-   GCS_STAGING_BUCKET="dominikito-staging-TU_GCP_PROJECT_ID"
-   GCP_SERVICE_ACCOUNT="dominikito-agent-sa@TU_GCP_PROJECT_ID.iam.gserviceaccount.com"
+   GCS_STAGING_BUCKET="dominikito-staging-$GCP_PROJECT_ID"
+   GCP_SERVICE_ACCOUNT="dominikito-agent-sa@$GCP_PROJECT_ID.iam.gserviceaccount.com"
 
    # Claves y configuraciones de servicios externos
    GOOGLE_API_KEY="TU_GEMINI_API_KEY" # Opcional si se ejecuta local sin ADC
    ELEVENLABS_API_KEY="TU_ELEVENLABS_API_KEY"
-   SUPABASE_URL="TU_SUPABASE_URL"
-   SUPABASE_SERVICE_ROLE_KEY="TU_SUPABASE_SERVICE_ROLE_KEY"
    DASHBOARD_PIN="1234"
    ```
 
@@ -124,7 +122,16 @@ La aplicación FastAPI del backend se desplegará en un contenedor administrado 
    gcloud builds submit --tag gcr.io/$GCP_PROJECT_ID/dominikito-backend
    ```
 
-2. Despliega la imagen en Cloud Run asociándola a su cuenta de servicio dedicada y pasando los secretos y variables de entorno del archivo `.env`:
+2. Crea el secreto de ElevenLabs en GCP Secret Manager para que esté disponible de forma segura (Terraform ya configuró los permisos de lectura para la cuenta de servicio):
+   ```bash
+   # Crear el recurso del secreto en Secret Manager
+   gcloud secrets create elevenlabs-api-key --replication-policy="automatic"
+
+   # Agregar el valor de tu clave de ElevenLabs al secreto (reemplaza TU_API_KEY)
+   echo -n "TU_API_KEY" | gcloud secrets versions add elevenlabs-api-key --data-file=-
+   ```
+
+3. Despliega la imagen en Cloud Run asociándola a su cuenta de servicio dedicada y pasando los secretos y variables de entorno del archivo `.env`:
    ```bash
    gcloud run deploy dominikito-backend \
      --image gcr.io/$GCP_PROJECT_ID/dominikito-backend \
@@ -132,10 +139,10 @@ La aplicación FastAPI del backend se desplegará en un contenedor administrado 
      --region us-central1 \
      --allow-unauthenticated \
      --set-env-vars="DASHBOARD_PIN=1234,GCP_PROJECT_ID=$GCP_PROJECT_ID,GCP_REGION=us-central1" \
-     --set-secrets="ELEVENLABS_API_KEY=elevenlabs-api-key:latest,SUPABASE_URL=supabase-url:latest,SUPABASE_SERVICE_ROLE_KEY=supabase-service-role-key:latest"
+     --set-secrets="ELEVENLABS_API_KEY=elevenlabs-api-key:latest"
    ```
    
-   > 💡 **Tip sobre Secretos:** En producción, es altamente recomendable crear previamente los secretos en GCP Secret Manager utilizando `gcloud secrets create` y luego pasarlos al comando mediante `--set-secrets` como se describe arriba para no exponer claves en texto plano en la configuración del servicio.
+   > 💡 **Nota sobre Permisos:** La cuenta de servicio `dominikito-run-sa` tiene permisos automáticos de lectura sobre los secretos gracias al aprovisionamiento previo de Terraform (`roles/secretmanager.secretAccessor`).
 
 Al terminar, Cloud Run te proporcionará la **Service URL** pública de la aplicación backend (ej. `https://dominikito-backend-xxxxxx.a.run.app`).
 

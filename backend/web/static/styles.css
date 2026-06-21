@@ -985,3 +985,64 @@ body.dev .devlog{display:block}
     padding-top: 48px;
   }
 }
+
+/* ---- selección de personajes con emojis ---- */
+.char-section {
+  border-top: 2px dashed rgba(46,22,143,.15);
+  padding-top: 14px;
+  margin-top: 14px;
+}
+.character-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(110px, 1fr));
+  gap: 12px;
+  margin-top: 10px;
+}
+.character-card {
+  background: #fff;
+  border: 2.5px solid var(--ink);
+  border-radius: 20px;
+  padding: 10px 8px;
+  text-align: center;
+  cursor: pointer;
+  box-shadow: 0 4px 0 rgba(46,22,143,.14);
+  transition: transform .07s, box-shadow .07s, border-color .07s, background-color .07s;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+.character-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 0 rgba(46,22,143,.14);
+}
+.character-card.selected {
+  background: var(--lila-soft);
+  border-color: var(--purple);
+  box-shadow: 0 2px 0 var(--ink);
+  transform: translateY(2px);
+}
+.character-card-emoji {
+  font-size: 32px;
+  line-height: 1.2;
+  margin-bottom: 6px;
+  filter: drop-shadow(0 2px 0 rgba(46,22,143,.12));
+}
+.character-card-name {
+  font-family: 'Baloo 2', cursive;
+  font-weight: 800;
+  font-size: 15px;
+  color: var(--ink);
+  margin-bottom: 4px;
+  line-height: 1.1;
+}
+.character-card-desc {
+  font-size: 10px;
+  line-height: 1.25;
+  color: var(--ink);
+  opacity: 0.8;
+  display: -webkit-box;
+  -webkit-line-clamp: 3;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+  height: 38px;
+}

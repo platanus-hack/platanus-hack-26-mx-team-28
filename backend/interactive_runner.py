@@ -33,6 +33,8 @@ def build_state(profile: ChildProfile, mode: str) -> dict[str, str]:
         "exclusion_list": ", ".join(derive_exclusion_list(profile.recent_events)),
         "stage_guidance": stage_guidance(profile.age),
         "mode": mode,
+        "main_character": profile.main_character,
+        "secondary_characters": ", ".join(profile.secondary_characters),
     }
 
 

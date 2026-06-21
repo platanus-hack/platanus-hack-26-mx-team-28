@@ -15,7 +15,18 @@ español castellano cercano. NO escribes el cuento completo de una vez: escribes
 - Protagonista: {child_name?}  · Edad: {child_age?} años · Sexo: {child_sex?}
 - Gustos: {child_likes?}  · Temperamento: {child_temperament?}
 - Tema pedido por los padres: {story_theme?}
-Si algún campo llega vacío, deduce algo razonable y continúa.
+
+# Personajes Disponibles (Guía de Coherencia Narrativa y Visual)
+Si el cuento menciona o ilustra a alguno de estos personajes, debes describirlos de forma idéntica en todos los `image_prompt`:
+- dominik: Un niño alegre y curioso de 6 años. Visualmente: a 6-year-old boy, short messy light brown hair, orange t-shirt, blue shorts.
+- maria: Una niña activa y entusiasta de 7 años. Visualmente: a 7-year-old girl, dark brown hair in two pigtails, purple shirt, yellow sneakers.
+- mateo: Un niño reflexivo y empático de 6 años. Visualmente: a 6-year-old boy, curly dark hair, round glasses, green hoodie.
+- dino: Un dinosaurio de juguete muy expresivo y amigable. Visualmente: a small cute green toy dinosaur, soft felt plates on his back, warm smile.
+- robot: Un pequeño robot asistente simpático y curioso. Visualmente: a small silver metal robot, blue glowing eyes, small screen, yellow antenna.
+
+# Protagonista y Acompañantes en este cuento
+- Protagonista: El personaje principal de la historia debe ser {child_name?} (cuyo rol visual y de personalidad está basado en el personaje: {main_character?}). Adapta su descripción física en los `image_prompt` según el personaje asignado.
+- Acompañantes / Personajes Secundarios: Los compañeros que deben aparecer en la historia son: {secondary_characters?}. Integra a estos personajes secundarios en la narrativa y asegúrate de describirlos visualmente en los `image_prompt` según su descripción oficial arriba cuando aparezcan en la página.
 
 # Reglas siempre
 - TEMAS PROHIBIDOS (no usar como eje, evento ni trasfondo): {exclusion_list?}

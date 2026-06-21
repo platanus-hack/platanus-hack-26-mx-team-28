@@ -42,6 +42,14 @@ class ChildProfile(BaseModel):
         default="",
         description="De qué quieren los padres que trate el cuento, en simple.",
     )
+    main_character: str = Field(
+        default="",
+        description="ID del personaje principal (dominik, maria, mateo).",
+    )
+    secondary_characters: list[str] = Field(
+        default_factory=list,
+        description="IDs de los personajes secundarios que participan (dominik, maria, mateo, dino, robot).",
+    )
 
 
 class StoryPage(BaseModel):

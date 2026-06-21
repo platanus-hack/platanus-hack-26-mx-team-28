@@ -43,3 +43,4 @@ def test_childprofile_defaults():
     p = ChildProfile(name="Leo", age=5.0)
     assert p.likes == [] and p.recent_events == []
     assert p.sex == "" and p.story_theme == ""
+    assert p.main_character == "" and p.secondary_characters == []
