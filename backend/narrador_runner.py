@@ -48,6 +48,8 @@ def build_state(profile: ChildProfile) -> dict[str, str]:
         "story_theme": profile.story_theme,
         "recent_events": "\n".join(profile.recent_events),
         "exclusion_list": ", ".join(derive_exclusion_list(profile.recent_events)),
+        "main_character": profile.main_character,
+        "secondary_characters": ", ".join(profile.secondary_characters),
     }
 
 

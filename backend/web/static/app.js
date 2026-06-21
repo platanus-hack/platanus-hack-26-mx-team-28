@@ -20,6 +20,53 @@ const db = getFirestore(app);
 const storage = getStorage(app);
 const provider = new GoogleAuthProvider();
 
+const SEED_CHARACTERS = [
+  {
+    id: "dominik",
+    name: "Dominik",
+    type: "character",
+    emoji: "👦",
+    description: "Un niño alegre y curioso de 6 años al que le encanta explorar, hacer preguntas y vivir aventuras creativas en compañía de sus amigos.",
+    imageUrl: "/assets/dominik.jpeg"
+  },
+  {
+    id: "maria",
+    name: "María",
+    type: "character",
+    emoji: "👧",
+    description: "Una niña activa y entusiasta de 7 años, muy observadora y creativa, que siempre propone ideas ingeniosas y disfruta del trabajo en equipo.",
+    imageUrl: "/assets/maria.jpeg"
+  },
+  {
+    id: "mateo",
+    name: "Mateo",
+    type: "character",
+    emoji: "🧒",
+    description: "Un niño reflexivo y empático de 6 años, gran observador de la naturaleza y los animales, que prefiere pensar las cosas antes de actuar y siempre cuida de sus compañeros.",
+    imageUrl: "/assets/mateo.jpeg"
+  },
+  {
+    id: "dino",
+    name: "Dino",
+    type: "creature",
+    emoji: "🦖",
+    description: "Un dinosaurio de juguete muy expresivo y amigable, con escamas verdes y una gran sonrisa, siempre listo para acompañar en juegos imaginativos.",
+    imageUrl: "/assets/dino.jpeg"
+  },
+  {
+    id: "robot",
+    name: "Robot",
+    type: "creature",
+    emoji: "🤖",
+    description: "Un pequeño robot asistente de aspecto simpático y metálico, con luces de colores y pantalla expresiva, curioso por aprender sobre las emociones y el mundo que lo rodea.",
+    imageUrl: "/assets/robot.jpeg"
+  }
+];
+
+let dbCharacters = [...SEED_CHARACTERS];
+let selectedMainCharacter = "dominik";
+let selectedSecondaryCharacters = new Set(["dino"]);
+
 const ILLUS = ["🐵", "🛸", "⭐", "🌙", "☁️", "🍌"];
 const OPT_COLORS = ["blue", "orange", "green", "purple", "red"];
 
@@ -255,6 +302,8 @@ function profileFromForm() {
     temperament: document.getElementById("f-temp").value.trim(),
     recent_events: events ? [events] : [],
     story_theme: document.getElementById("f-theme").value.trim(),
+    main_character: selectedMainCharacter,
+    secondary_characters: Array.from(selectedSecondaryCharacters),
     include_toy: !!(document.getElementById("f-toy-include") && document.getElementById("f-toy-include").checked && toyImageB64),
     toy_image_b64: toyImageB64,
     favorite_toy: "",
@@ -474,7 +523,98 @@ function nextPage(isAuto = false) {
   }
 }
 
+async function checkAndSeedCharacters() {
+  if (!currentUser) return;
+  try {
+    const charsCollection = collection(db, "characters");
+    const snapshot = await getDocs(charsCollection);
+    if (snapshot.empty) {
+      console.log("Firestore characters collection is empty. Seeding characters...");
+      for (const char of SEED_CHARACTERS) {
+        await setDoc(doc(db, "characters", char.id), char);
+      }
+    }
+  } catch (e) {
+    console.error("Error checking/seeding characters:", e);
+  }
+}
+
+async function loadCharacters() {
+  if (currentUser) {
+    try {
+      const snapshot = await getDocs(collection(db, "characters"));
+      if (!snapshot.empty) {
+        dbCharacters = [];
+        snapshot.forEach(doc => {
+          dbCharacters.push(doc.data());
+        });
+      }
+    } catch (e) {
+      console.error("Error loading characters from Firestore, using seed fallback:", e);
+    }
+  }
+  renderCharactersUI();
+}
+
+function renderCharactersUI() {
+  const mainGrid = document.getElementById("main-character-grid");
+  const secondaryGrid = document.getElementById("secondary-characters-grid");
+  if (!mainGrid || !secondaryGrid) return;
+
+  // Render main characters (only humans: dominik, maria, mateo)
+  const mainChars = dbCharacters.filter(c => c.type === "character");
+  mainGrid.innerHTML = mainChars.map(c => {
+    const isSelected = c.id === selectedMainCharacter ? "selected" : "";
+    return `
+      <div class="character-card ${isSelected}" data-id="${c.id}" onclick="selectMainCharacter('${c.id}')">
+        <div class="character-card-emoji">${c.emoji}</div>
+        <div class="character-card-name">${c.name}</div>
+        <div class="character-card-desc">${c.description}</div>
+      </div>
+    `;
+  }).join("");
+
+  // Render secondary characters (all except the selected main character)
+  const secondaryChars = dbCharacters.filter(c => c.id !== selectedMainCharacter);
+  secondaryGrid.innerHTML = secondaryChars.map(c => {
+    const isSelected = selectedSecondaryCharacters.has(c.id) ? "selected" : "";
+    return `
+      <div class="character-card ${isSelected}" data-id="${c.id}" onclick="toggleSecondaryCharacter('${c.id}')">
+        <div class="character-card-emoji">${c.emoji}</div>
+        <div class="character-card-name">${c.name}</div>
+        <div class="character-card-desc">${c.description}</div>
+      </div>
+    `;
+  }).join("");
+}
+
+function selectMainCharacter(charId) {
+  selectedMainCharacter = charId;
+  
+  // Update name field to match selected character's name
+  const char = dbCharacters.find(c => c.id === charId);
+  if (char) {
+    document.getElementById("f-name").value = char.name;
+  }
+  
+  // If the new main character was a selected secondary character, remove it
+  selectedSecondaryCharacters.delete(charId);
+  
+  renderCharactersUI();
+}
+
+function toggleSecondaryCharacter(charId) {
+  if (selectedSecondaryCharacters.has(charId)) {
+    selectedSecondaryCharacters.delete(charId);
+  } else {
+    selectedSecondaryCharacters.add(charId);
+  }
+  renderCharactersUI();
+}
+
 // Bind all module functions to window so they are globally accessible from inline HTML
+window.selectMainCharacter = selectMainCharacter;
+window.toggleSecondaryCharacter = toggleSecondaryCharacter;
 window.createStory = createStory;
 window.loadSample = loadSample;
 window.backToCreate = backToCreate;
@@ -1651,6 +1791,9 @@ onAuthStateChanged(auth, (user) => {
     document.getElementById("user-avatar-img").src = user.photoURL || "";
     document.getElementById("user-name-span").textContent = user.displayName || user.email;
     document.getElementById("btn-show-history").style.display = "inline-block";
+    checkAndSeedCharacters().then(() => {
+      loadCharacters();
+    });
   } else {
     currentUser = null;
     document.getElementById("user-header").style.display = "none";
@@ -1692,3 +1835,6 @@ window.toggleScience = function(btn) {
     btn.classList.remove("active");
   }
 };
+
+// Render initial characters on page load
+renderCharactersUI();
